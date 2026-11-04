@@ -1,0 +1,13 @@
+<!doctype html>
+<html lang="pt-BR"><head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Show do Milhão — Ranking</title><link rel="stylesheet" href="style.css">
+</head><body>
+<main class="shell">
+  <header><p class="eyebrow">DESAFIO DE CONHECIMENTO</p><h1>Show do <span>Milhão</span></h1><p>Ranking oficial das melhores partidas</p></header>
+  <section class="controls"><label>Jogo <select id="gameFilter"><option value="">Todos os jogos</option></select></label><button id="refresh">↻ Atualizar ranking</button></section>
+  <p id="status" role="status" aria-live="polite">Carregando ranking…</p>
+  <section id="champion" class="champion" hidden></section>
+  <section class="card"><div class="table-wrap"><table><thead><tr><th>Posição</th><th>Jogador</th><th>Prêmio</th><th>Tempo</th><th>Data</th></tr></thead><tbody id="ranking"></tbody></table></div><p id="empty" hidden>Nenhuma partida foi registrada ainda.</p></section>
+</main><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="config.js"></script><script src="script.js"></script></body></html>
+

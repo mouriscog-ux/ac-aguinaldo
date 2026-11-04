@@ -1,0 +1,6 @@
+// Copy to config.js and use the *anon public* key, never the secret/service_role key.
+window.SUPABASE_CONFIG = {
+  url: 'https://pabemfcpfozsgpabbmpj.supabase.co',
+  anonKey: 'COLE_AQUI_SUA_CHAVE_ANON_PUBLICA'
+};
+
