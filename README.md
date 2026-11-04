@@ -22,7 +22,7 @@ pip install -r requirements.txt
 ```
 
 3. Copie `.env.example` para `.env`. Informe `SUPABASE_URL` e `SUPABASE_KEY` no arquivo local. Use a chave de servidor somente para o jogo e nunca faça commit do `.env`.
-4. No Supabase SQL Editor, execute primeiro `sql/schema.sql` e depois `sql/seguranca.sql`. Se o banco já tiver as tabelas solicitadas, revise as colunas antes de executar o schema; os comandos usam `if not exists` e não removem dados.
+4. No Supabase SQL Editor, confira a estrutura existente e execute `sql/schema.sql`, `sql/seguranca.sql` e `sql/jogo_web_seguro.sql`, nessa ordem. Revise os nomes reais das colunas antes de aplicar; os scripts não apagam perguntas nem partidas.
 5. Execute `sql/perguntas.sql` uma vez em um banco vazio para inserir as 15 perguntas iniciais (cinco por dificuldade), ou mantenha o conjunto já cadastrado. Depois permita que o aplicativo crie o jogo `Show do Milhão` na primeira partida.
 6. Valide e rode:
 
@@ -46,6 +46,6 @@ No GitHub, envie o código sem `.env` e sem `site/config.js` se preferir manter 
 
 ## Segurança e pendências de configuração
 
-Não havia `.env`, perguntas, projeto Python ou arquivos Supabase nesta pasta quando este trabalho começou, logo a conexão real ainda depende do preenchimento local das credenciais e da aplicação das migrações. Nunca exponha uma chave secreta. Caso uma chave tenha sido publicada antes, rotacione-a no painel do Supabase.
+O repositório não contém `.env`; crie-o localmente a partir de `.env.example` e use `SUPABASE_SECRET_KEY` somente no Python. O site usa apenas a chave pública de `site/config.js`. Nunca exponha uma chave secreta. Caso uma chave secreta tenha sido publicada antes, rotacione-a no painel do Supabase.
 
-As fontes do conjunto inicial estão em `fontes_perguntas.md`. Depois da migração, faça uma partida real, abra o site e valide o ranking para concluir a verificação de integração.
+As fontes do conjunto inicial estão em `fontes_perguntas.md`. A execução das migrações, o teste de conexão real e a validação da publicação dependem de credenciais e acesso ao projeto Supabase; ainda precisam ser confirmados no ambiente configurado.

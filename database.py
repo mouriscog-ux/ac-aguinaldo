@@ -46,6 +46,8 @@ class Database:
         query = self.client.table('ranking_publico').select('*')
         if game_id:
             query = query.eq('jogo_id', game_id)
-        # The deployed public view exposes the match identifier as `id`.
-        return query.order('valor_ganho', desc=True).order('tempo_segundos').order('data_hora').order('id').limit(10).execute().data
+        # ranking_publico exposes the match UUID as `partida_id` and already
+        # limits each game to its ten best players. Avoid a global limit here:
+        # it would hide other games when the CLI asks for the full ranking.
+        return query.order('posicao').execute().data
 

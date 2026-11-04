@@ -1,12 +1,9 @@
 # Registro de uso de IA
 
-## 4 de novembro de 2026 — Codex (GPT-5)
+## 4 de novembro de 2026 — continuação neste ambiente
 
-- **Objetivo:** implementar a aplicação terminal, integração segura com Supabase, ranking web, SQL, testes e documentação do projeto Show do Milhão.
-- **Prompt completo:** “adicione tudo nessa pasta”, acompanhado do briefing “PROJETO COMPLETO — SHOW DO MILHÃO”.
-- **Como a resposta foi utilizada:** foram criados os arquivos da aplicação e da documentação nesta pasta vazia. Não há histórico de prompts anteriores disponível neste repositório; ele deve ser complementado pelo autor caso exista.
-- **Alterações realizadas:** regras de partida e premiação, acesso ao Supabase por variáveis de ambiente, migrações SQL, site somente-leitura, testes unitários e README.
-- **Arquivos/funções afetados:** `game.py` (`choose_questions`, `play`), `database.py`, `main.py`, `sql/*.sql`, `site/*`, `tests/*`.
-- **Problema/correção/teste:** o ranking não deve consultar a tabela `partidas` diretamente, pois ela contém mais dados do que o site precisa. Foi criada a view `ranking_publico` e removido o acesso `anon` à tabela. A consulta é verificada pela configuração em `sql/seguranca.sql`; após executar a migração, validar no navegador e com o teste de integração descrito no README.
-- **Testes executados:** registrar aqui o resultado do comando `python -m unittest discover -s tests` executado no ambiente do projeto.
+- **Prompt recebido:** “`C:\Users\PICHAU\Documents\GitHub\ac-aguinaldo coloque nesta pasta tudo`”, acompanhado do arquivo de contexto “CONTEXTO COMPLETO E CONTINUAÇÃO DO PROJETO — SHOW DO MILHÃO”.
+- **Trabalho anterior:** o repositório já continha o jogo, o site, migrações, testes e documentação. O histórico de prompts e de alterações feitas antes desta sessão não foi fornecido; não atribua esse trabalho a um prompt específico sem confirmar com o autor.
+- **Alteração nesta continuação:** corrigida em `database.py` a consulta do ranking Python, que ordenava por uma coluna inexistente na view pública e aplicava um limite global que ocultava resultados de outros jogos. Adicionados testes unitários para essa consulta.
+- **Verificação:** não foi possível executar a suíte neste computador porque o comando Python não está instalado/disponível no terminal. A conexão real, a execução das migrações no projeto Supabase e a publicação Pages também dependem da configuração externa e não são presumidas.
 
