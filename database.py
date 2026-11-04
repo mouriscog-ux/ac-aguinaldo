@@ -46,5 +46,6 @@ class Database:
         query = self.client.table('ranking_publico').select('*')
         if game_id:
             query = query.eq('jogo_id', game_id)
-        return query.order('valor_ganho', desc=True).order('tempo_segundos').order('data_hora').order('partida_id').limit(10).execute().data
+        # The deployed public view exposes the match identifier as `id`.
+        return query.order('valor_ganho', desc=True).order('tempo_segundos').order('data_hora').order('id').limit(10).execute().data
 

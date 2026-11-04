@@ -1,37 +1,22 @@
-/* Read-only client: config.js contains only the public anonymous key. */
-const status = document.querySelector('#status'), tbody = document.querySelector('#ranking');
-const gameFilter = document.querySelector('#gameFilter'), refreshButton = document.querySelector('#refresh');
-const formatMoney = n => new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL',maximumFractionDigits:0}).format(n);
-function client() {
-  const c = window.SUPABASE_CONFIG;
-  if (!c || !c.url || !c.anonKey || c.anonKey.includes('COLE_')) throw new Error('Credenciais públicas não configuradas. Crie site/config.js a partir de config.js.example e informe a chave anon/publicável.');
-  if (!window.supabase) throw new Error('Não foi possível carregar a biblioteca do Supabase. Verifique a conexão com a internet.');
-  return window.supabase.createClient(c.url, c.anonKey);
-}
-function setLoading(loading) { refreshButton.disabled = loading; refreshButton.textContent = loading ? 'Atualizando…' : '↻ Atualizar ranking'; }
-function describeError(error) {
-  if (error?.code === '42501') return 'Sem permissão para consultar o ranking. Verifique a view e as políticas RLS.';
-  if (error?.message?.includes('fetch')) return 'Não foi possível conectar ao Supabase. Verifique sua internet e a URL do projeto.';
-  return `Falha ao consultar o ranking: ${error?.message || 'erro desconhecido'}`;
-}
-async function loadGames(){
-  const {data: games, error} = await client().from('jogos').select('id,nome').order('nome');
-  if (error) throw error;
-  gameFilter.replaceChildren(new Option('Todos os jogos', ''));
-  games.forEach(g => gameFilter.add(new Option(g.nome, g.id)));
-}
-async function loadRanking(){
-  setLoading(true); status.textContent='Carregando ranking…';tbody.innerHTML='';document.querySelector('#champion').hidden=true;document.querySelector('#empty').hidden=true;
-  try {
-    let request = client().from('ranking_publico').select('partida_id,jogo_id,apelido,valor_ganho,tempo_segundos,data_hora,posicao').order('valor_ganho',{ascending:false}).order('tempo_segundos').order('data_hora').order('partida_id');
-    if (gameFilter.value) request = request.eq('jogo_id', gameFilter.value);
-    const {data: rows, error} = await request;
-    if (error) throw error;
-    status.textContent='Ranking atualizado.';document.querySelector('#empty').hidden=rows.length>0;
-    if(rows[0]){const c=document.querySelector('#champion');c.hidden=false;c.innerHTML=`🏆 <strong>1º ${escapeHtml(rows[0].apelido)}</strong><br>${formatMoney(rows[0].valor_ganho)} em ${Number(rows[0].tempo_segundos).toFixed(2)}s`;}
-    rows.forEach(r=>{const tr=document.createElement('tr');tr.innerHTML=`<td>${r.posicao}º</td><td>${escapeHtml(r.apelido)}</td><td>${formatMoney(r.valor_ganho)}</td><td>${Number(r.tempo_segundos).toFixed(2)} s</td><td>${new Date(r.data_hora).toLocaleString('pt-BR')}</td>`;tbody.append(tr)});
-  } catch(e) { status.textContent='Erro: '+describeError(e); } finally { setLoading(false); }
-}
-function escapeHtml(v){const d=document.createElement('div');d.textContent=v;return d.innerHTML}
-document.querySelector('#refresh').onclick=loadRanking;document.querySelector('#gameFilter').onchange=loadRanking;
-(async()=>{try{await loadGames()}catch(e){status.textContent='Erro: '+e.message}await loadRanking()})();
+const $ = (s) => document.querySelector(s);
+const state = {client:null, games:[], session:null, questions:[], index:0, started:0, timer:null};
+const PRIZES = [1000,5000,10000,25000,50000,100000,200000,500000,1000000];
+const money = n => new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL',maximumFractionDigits:0}).format(Number(n||0));
+const escapeHtml = value => { const el=document.createElement('span'); el.textContent=value??''; return el.innerHTML; };
+function getClient(){if(state.client)return state.client;const c=window.SUPABASE_CONFIG;if(!c?.url||!c?.anonKey||c.anonKey.includes('COLE_'))throw new Error('Configure site/config.js com a chave pública anon/publishable do Supabase.');if(!window.supabase)throw new Error('Não foi possível carregar a biblioteca do Supabase.');return state.client=window.supabase.createClient(c.url,c.anonKey)}
+function errorText(e){if(e?.code==='42501')return 'Sem permissão. Verifique as políticas RLS e execute sql/jogo_web_seguro.sql.';if(e?.code==='PGRST202'||e?.message?.includes('iniciar_jogo_web'))return 'O banco ainda não recebeu a migração do jogo web. Execute sql/jogo_web_seguro.sql no Supabase SQL Editor.';if(e?.message?.includes('fetch'))return 'Não foi possível conectar ao Supabase.';return e?.message||'Erro desconhecido.'}
+function setModal(view){['gameStart','gamePlay','gameResult'].forEach(id=>$('#'+id).hidden=id!==view)}
+function openGame(){clearInterval(state.timer);state.session=null;state.questions=[];$('#gameModal').hidden=false;$('#gameStartError').textContent='';$('#nickname').focus();setModal('gameStart')}
+function closeGame(){clearInterval(state.timer);$('#gameModal').hidden=true}
+function tick(){const seconds=Math.floor((performance.now()-state.started)/1000);$('#timer').textContent=`${String(Math.floor(seconds/60)).padStart(2,'0')}:${String(seconds%60).padStart(2,'0')}`}
+async function loadGames(){let r=await getClient().from('jogos_publicos').select('*');if(r.error)r=await getClient().from('jogos').select('id,nome').order('nome');if(r.error)throw r.error;state.games=r.data.map(g=>({id:g.id??g.jogo_id,name:g.nome??g.nome_jogo??`Jogo ${g.id}`}));for(const select of [$('#gameFilter'),$('#playGame')]){const keep=select.value;select.replaceChildren();if(select.id==='gameFilter')select.add(new Option('Todos os jogos',''));state.games.forEach(g=>select.add(new Option(g.name,g.id)));if([...select.options].some(option=>option.value===keep))select.value=keep}}
+function normalize(row){return{id:row.id??row.partida_id??'',nickname:row.apelido??'Sem apelido',value:Number(row.valor_ganho??0),time:Number(row.tempo_segundos??0),date:row.data_hora??'',position:row.posicao}}
+function compare(a,b){return b.value-a.value||a.time-b.time||new Date(a.date)-new Date(b.date)||String(a.id).localeCompare(String(b.id))}
+function renderRanking(data){const players=data.map(normalize).sort(compare).slice(0,10),podium=$('#podium'),tbody=$('#rankingRows');podium.replaceChildren();tbody.replaceChildren();$('#empty').hidden=players.length>0;podium.hidden=!players.length;players.slice(0,3).forEach((p,i)=>{const el=document.createElement('article');el.className=`podium-card ${['first','second','third'][i]}`;el.innerHTML=`<div class="place">${['🥇','🥈','🥉'][i]}</div><h3>${escapeHtml(p.nickname)}</h3><p>${p.time.toFixed(2)} segundos</p><strong>${money(p.value)}</strong>`;podium.append(el)});players.slice(3).forEach((p,i)=>{const el=document.createElement('tr'),date=p.date?new Date(p.date).toLocaleString('pt-BR'):'—';el.innerHTML=`<td>${p.position??i+4}º</td><td>${escapeHtml(p.nickname)}</td><td>${money(p.value)}</td><td>${p.time.toFixed(2)} s</td><td>${date}</td>`;tbody.append(el)})}
+async function loadRanking(){const button=$('#refresh');button.disabled=true;button.textContent='Atualizando…';$('#status').textContent='Carregando ranking oficial…';try{let q=getClient().from('ranking_publico').select('*');if($('#gameFilter').value)q=q.eq('jogo_id',$('#gameFilter').value);const {data,error}=await q;if(error)throw error;renderRanking(data);$('#status').textContent=data.length?`Ranking atualizado: ${data.length} resultado(s).`:'Ranking vazio para este jogo.'}catch(e){renderRanking([]);$('#status').textContent=`Erro: ${errorText(e)}`}finally{button.disabled=false;button.textContent='↻ Atualizar ranking'}}
+async function beginGame(){const nickname=$('#nickname').value.trim(),gameId=$('#playGame').value;$('#gameStartError').textContent='';if(!nickname){$('#gameStartError').textContent='Informe um apelido para jogar.';return}if(!gameId){$('#gameStartError').textContent='Nenhum jogo foi encontrado no banco.';return}const button=$('#beginGame');button.disabled=true;button.textContent='Preparando perguntas…';try{const {data,error}=await getClient().rpc('iniciar_jogo_web',{p_apelido:nickname,p_jogo_id:gameId});if(error)throw error;state.session=data.sessao_id;state.questions=data.perguntas;state.index=0;state.started=performance.now();state.timer=setInterval(tick,1000);tick();setModal('gamePlay');renderQuestion()}catch(e){$('#gameStartError').textContent=errorText(e)}finally{button.disabled=false;button.textContent='Começar partida'}}
+function renderQuestion(){const q=state.questions[state.index];$('#progress').textContent=`Pergunta ${state.index+1} de 9`;$('#gamePrize').textContent=money(PRIZES[state.index]);$('#progressBar').style.width=`${(state.index+1)*100/9}%`;$('#difficulty').textContent=q.dificuldade;$('#questionText').textContent=q.enunciado;const answers=$('#answers');answers.replaceChildren();['A','B','C','D'].forEach(letter=>{const b=document.createElement('button');b.className='answer';b.innerHTML=`<b>${letter}</b><span>${escapeHtml(q[`alternativa_${letter.toLowerCase()}`])}</span>`;b.addEventListener('click',()=>answer(letter));answers.append(b)})}
+async function answer(letter,quit=false){const q=state.questions[state.index];document.querySelectorAll('.answer,#quitGame').forEach(b=>b.disabled=true);try{const {data,error}=await getClient().rpc('responder_jogo_web',{p_sessao_id:state.session,p_pergunta_id:q.id,p_resposta:letter,p_desistir:quit});if(error)throw error;if(data.encerrada){showResult(data);return}state.index++;renderQuestion()}catch(e){alert(`Não foi possível registrar a resposta: ${errorText(e)}`);renderQuestion()}}
+function showResult(result){clearInterval(state.timer);const titles={errou:'Que pena, desta vez não!',desistiu:'Partida encerrada.',concluiu:'Você chegou ao milhão!'};$('#resultBadge').textContent=(result.motivo||'resultado').toUpperCase();$('#resultTitle').textContent=titles[result.motivo]||'Partida finalizada';$('#resultMessage').textContent=result.motivo==='errou'?`A resposta correta era ${result.correta}.`:'Sua partida foi salva no ranking oficial.';$('#resultPrize').textContent=money(result.valor_ganho);$('#resultStats').textContent=`${result.acertos} acerto(s) · ${Number(result.tempo_segundos).toFixed(2)} segundos`;setModal('gameResult');loadRanking()}
+$('.menu-toggle').addEventListener('click',()=>{const m=$('#menu'),open=m.classList.toggle('open');$('.menu-toggle').setAttribute('aria-expanded',String(open))});$('#menu').addEventListener('click',()=>$('#menu').classList.remove('open'));document.querySelectorAll('.start-game').forEach(b=>b.addEventListener('click',openGame));$('#closeGame').addEventListener('click',closeGame);$('#quitGame').addEventListener('click',()=>answer('',true));$('#viewRanking').addEventListener('click',()=>{closeGame();$('#ranking').scrollIntoView()});$('#refresh').addEventListener('click',loadRanking);$('#gameFilter').addEventListener('change',loadRanking);
+(async()=>{try{await loadGames()}catch(e){$('#status').textContent=`Erro: ${errorText(e)}`}await loadRanking()})();
