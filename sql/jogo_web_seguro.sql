@@ -77,7 +77,9 @@ begin
   if v_encerrada then
     update sessoes_jogo_web set acertos=v_acertos, valor_ganho=v_valor, finalizada_em=now(), motivo_encerramento=v_motivo where id=s.id;
     insert into partidas (id, jogo_id, apelido, valor_ganho, tempo_segundos, acertos, motivo_encerramento)
-    values (s.id, s.jogo_id, s.apelido, v_valor, v_tempo, v_acertos, v_motivo) on conflict (id) do nothing;
+    values (s.id, s.jogo_id, s.apelido, v_valor, v_tempo, v_acertos,
+      case v_motivo when 'errou' then 'erro' when 'desistiu' then 'desistencia' when 'concluiu' then 'completo' end)
+    on conflict (id) do nothing;
   else
     update sessoes_jogo_web set indice=indice+1, acertos=v_acertos, valor_ganho=v_valor where id=s.id;
   end if;

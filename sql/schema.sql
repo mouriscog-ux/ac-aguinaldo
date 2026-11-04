@@ -23,7 +23,8 @@ create table if not exists public.partidas (
   valor_ganho integer not null check (valor_ganho in (0,1000,5000,10000,25000,50000,100000,200000,500000,1000000)),
   tempo_segundos numeric(12,3) not null check (tempo_segundos >= 0),
   acertos smallint not null check (acertos between 0 and 9),
-  motivo_encerramento text not null check (motivo_encerramento in ('errou','desistiu','concluiu')),
+  -- Keep the persisted values compatible with the existing Supabase project.
+  motivo_encerramento varchar(20) not null check (motivo_encerramento in ('erro','desistencia','completo')),
   data_hora timestamptz not null default now()
 );
 

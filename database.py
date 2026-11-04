@@ -6,6 +6,12 @@ from supabase import create_client
 from config import supabase_settings
 from models import GameResult, Question
 
+_DB_END_REASONS = {
+    'errou': 'erro', 'erro': 'erro',
+    'desistiu': 'desistencia', 'desistencia': 'desistencia',
+    'concluiu': 'completo', 'completo': 'completo',
+}
+
 
 class Database:
     def __init__(self, client: Any | None = None) -> None:
@@ -37,9 +43,12 @@ class Database:
 
     def register_game(self, result: GameResult) -> None:
         # The client-generated UUID and a unique primary key make retries idempotent.
+        reason = _DB_END_REASONS.get(result.motivo_encerramento)
+        if reason is None:
+            raise ValueError(f'Motivo de encerramento inválido: {result.motivo_encerramento}')
         row = {'id': str(result.id), 'jogo_id': result.jogo_id, 'apelido': result.apelido,
                'valor_ganho': result.valor_ganho, 'tempo_segundos': round(result.tempo_segundos, 3),
-               'acertos': result.acertos, 'motivo_encerramento': result.motivo_encerramento}
+               'acertos': result.acertos, 'motivo_encerramento': reason}
         self.client.table('partidas').upsert(row, on_conflict='id').execute()
 
     def ranking(self, game_id: str | None = None) -> list[dict[str, Any]]:

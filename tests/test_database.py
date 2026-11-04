@@ -24,6 +24,12 @@ class DatabaseTests(unittest.TestCase):
         self.assertEqual(len(c.query.upserts),2)
         self.assertEqual(c.query.upserts[0][0]['id'],c.query.upserts[1][0]['id'])
         self.assertEqual(c.query.upserts[0][1]['on_conflict'],'id')
+        self.assertEqual(c.query.upserts[0][0]['motivo_encerramento'],'erro')
+
+    def test_completed_reason_maps_to_database_constraint_value(self):
+        c=Client(); db=Database(c); result=GameResult(uuid.uuid4(),'game','Ana',1_000_000,20,9,'concluiu')
+        db.register_game(result)
+        self.assertEqual(c.query.upserts[0][0]['motivo_encerramento'],'completo')
 
     def test_ranking_uses_view_positions_without_global_limit(self):
         c=Client(); c.query.rows=[{'partida_id':'match-1','posicao':1}]; db=Database(c)

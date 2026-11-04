@@ -22,7 +22,7 @@ pip install -r requirements.txt
 ```
 
 3. Copie `.env.example` para `.env`. Informe `SUPABASE_URL` e `SUPABASE_KEY` no arquivo local. Use a chave de servidor somente para o jogo e nunca faça commit do `.env`.
-4. No Supabase SQL Editor, confira a estrutura existente e execute `sql/schema.sql`, `sql/seguranca.sql` e `sql/jogo_web_seguro.sql`, nessa ordem. Revise os nomes reais das colunas antes de aplicar; os scripts não apagam perguntas nem partidas.
+4. No Supabase SQL Editor, confira a estrutura existente e execute `sql/schema.sql`, `sql/seguranca.sql` e `sql/jogo_web_seguro.sql`, nessa ordem. Revise os nomes reais das colunas antes de aplicar; os scripts não apagam perguntas nem partidas. Se o banco já tinha a função web, execute `sql/jogo_web_seguro.sql` novamente para atualizar o mapeamento dos motivos de encerramento.
 5. Execute `sql/perguntas.sql` uma vez em um banco vazio para inserir as 15 perguntas iniciais (cinco por dificuldade), ou mantenha o conjunto já cadastrado. Depois permita que o aplicativo crie o jogo `Show do Milhão` na primeira partida.
 6. Valide e rode:
 
